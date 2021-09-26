@@ -20,9 +20,6 @@
     "deployClientVM": {
       "value": "yes"
     },
-    "clientVhdUri": {
-      "value": "no"
-    },
     "vmSize": {
       "value": "Standard_DS2_v2"
     },
