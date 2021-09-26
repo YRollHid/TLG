@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "configName": {
@@ -19,12 +19,12 @@
     "serverOS": {
       "type": "string",
       "allowedValues": [
-        "2012-R2-Datacenter", "2016-Datacenter"
+        "2012-R2-Datacenter", "2016-Datacenter", "2019-Datacenter"
       ],
       "metadata": {
         "description": "The OS of application servers in your deployment."
       },
-      "defaultValue": "2016-Datacenter"
+      "defaultValue": "2019-Datacenter"
     },
     "adminUsername": {
       "type": "string",
@@ -73,7 +73,7 @@
       "metadata": {
         "description": "Auto-generated container in staging storage account to receive post-build staging folder upload."
       },
-      "defaultValue": "https://raw.githubusercontent.com/maxskunkworks/tlg/master/tlg-base-config_3-vm"
+      "defaultValue": "https://raw.githubusercontent.com/YRollHid/tlg/master/tlg-base-config_3-vm"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
