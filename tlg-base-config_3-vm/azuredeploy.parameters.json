@@ -21,7 +21,7 @@
       "value": "yes"
     },
     "clientVhdUri": {
-      "value": "yes"
+      "value": "no"
     },
     "vmSize": {
       "value": "Standard_DS2_v2"
@@ -30,7 +30,7 @@
       "value": ""
     },
     "_artifactsLocation": {
-      "value": "https://raw.githubusercontent.com/maxskunkworks/tlg/master/tlg-base-config_3-vm"
+      "value": "https://raw.githubusercontent.com/YRollHid/tlg/master/tlg-base-config_3-vm"
     },
     "_artifactsLocation": {
       "value": ""
