@@ -66,7 +66,7 @@
       "metadata": {
         "description": "Auto-generated container in staging storage account to receive post-build staging folder upload."
       },
-      "defaultValue": "https://raw.githubusercontent.com/YRollHid/tlg/master/tlg-base-config_3-vm"
+      "defaultValue": "https://raw.githubusercontent.com/YRollHid/TLG/master/tlg-base-config_3-vm"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
