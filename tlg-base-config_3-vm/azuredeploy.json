@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "configName": {
@@ -19,12 +19,12 @@
     "serverOS": {
       "type": "string",
       "allowedValues": [
-        "2012-R2-Datacenter", "2016-Datacenter", "2019-Datacenter"
+        "2012-R2-Datacenter", "2016-Datacenter"
       ],
       "metadata": {
         "description": "The OS of application servers in your deployment."
       },
-      "defaultValue": "2019-Datacenter"
+      "defaultValue": "2016-Datacenter"
     },
     "adminUsername": {
       "type": "string",
@@ -48,6 +48,13 @@
       },
       "defaultValue": "Yes"
     },
+    "clientVhdUri": {
+      "type": "string",
+      "metadata": {
+        "description": "The URI of the storage account containing the client VHD. Leave blank if you are not deploying a client VM."
+      },
+      "defaultValue": ""
+    },
     "vmSize": {
       "type": "string",
       "metadata": {
@@ -61,19 +68,12 @@
         "description": "DNS label prefix for public IPs. Must be lowercase and match the regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."
       }
     },
-    "vmAppCount": {
-     "type": "int",
-     "defaultValue": 2,
-     "metadata": {
-       "description": "The number of instance of an Azure resource tha will be deploy."
-     }
-    },
     "_artifactsLocation": {
       "type": "string",
       "metadata": {
         "description": "Auto-generated container in staging storage account to receive post-build staging folder upload."
       },
-      "defaultValue": "https://raw.githubusercontent.com/YRollHid/TLG/master/tlg-base-config_3-vm"
+      "defaultValue": "https://raw.githubusercontent.com/YRollHid/tlg/master/tlg-base-config_3-vm"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
@@ -107,12 +107,19 @@
       "adNicIP": "10.0.0.10",
       "adPublicIpName": "[concat(parameters('configName'),'-AD_IP')]",
 
-      "appVmName": "[concat('APP', copyIndex())]",
+      "appVmName": "APP1",
       "appConfigurationFunction": {
         "AppConfig": "AppConfig.ps1\\AppConfig"
       },
-      "appNicIP": "[concat('10.0.0.1', copyIndex())]",
-      "appPublicIpName": "[concat(parameters('configName'),'-APP_IP')]",
+      "appNicIP": "10.0.0.11",
+      "appPublicIpName": "[concat(parameters('configName'),'-APP1_IP')]",
+
+      "app2VmName": "APP2",
+      "app2ConfigurationFunction": {
+        "AppConfig": "AppConfig.ps1\\AppConfig"
+      },
+      "app2NicIP": "10.0.0.12",
+      "app2PublicIpName": "[concat(parameters('configName'),'-APP2_IP')]",
 
       "cliVmName": "CLIENT1",
       "clientNicIP": "10.0.0.20",
@@ -219,18 +226,27 @@
     {
       "apiVersion": "2017-06-01",
       "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[concat(variables('VMs').appPublicIpName, copyIndex())]",
+      "name": "[variables('VMs').appPublicIpName]",
       "location": "[resourceGroup().location]",
       "comments": "This is the public IP address for the app server VM.",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
-          "domainNameLabel": "[toLower(concat(parameters('dnsLabelPrefix'),'app', copyIndex()))]"
+          "domainNameLabel": "[toLower(concat(parameters('dnsLabelPrefix'),'app'))]"
         }
-      },
-      "copy": {
-        "name": "vmappcopy",
-        "count": "[parameters('vmAppCount')]"
+      }
+    },
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('VMs').app2PublicIpName]",
+      "location": "[resourceGroup().location]",
+      "comments": "This is the public IP address for the app server VM.",
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[toLower(concat(parameters('dnsLabelPrefix'),'app2'))]"
+        }
       }
     },
     {
@@ -275,7 +291,7 @@
       }
     },
     {
-      "name": "[concat(parameters('configName'),'-APP_NIC', copyIndex())]",
+      "name": "[concat(parameters('configName'),'-APP_NIC')]",
       "type": "Microsoft.Network/networkInterfaces",
       "location": "[resourceGroup().location]",
       "dependsOn": [
@@ -305,10 +321,39 @@
           ],
           "internalDomainNameSuffix": "[parameters('domainName')]"
         }
-      },
-      "copy": {
-        "name": "vmappcount",
-        "count": "[parameters('vmAppCount')]"
+      }
+    },
+{
+      "name": "[concat(parameters('configName'),'-APP2_NIC')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/',parameters('configName'),'-vnet')]"
+      ],
+      "apiVersion": "2018-01-01",
+      "comments": "This is the network interface for the app server VM.",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[variables('VMs').app2NicIP]",
+              "publicIPAddress": {
+                "id": "[resourceId ('Microsoft.Network/publicIPAddresses/',variables('VMs').app2PublicIpName)]"
+              },
+              "subnet": {
+                "id": "[variables('network').subnetRef]"
+              }
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": [
+            "[variables('VMs').adNicIP]"
+          ],
+          "internalDomainNameSuffix": "[parameters('domainName')]"
+        }
       }
     },
     {
@@ -384,7 +429,7 @@
       "apiVersion": "2015-01-01",
       "comments": "This is the deployment resource for the app server VM.",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/',parameters('configName'),'-APP_NIC', copyIndex())]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('configName'),'-APP_NIC')]",
         "[concat('Microsoft.Resources/deployments/','ADDC')]"
       ],
       "properties": {
@@ -393,25 +438,55 @@
           "uri": "[concat(variables('templates'),'/app.json',parameters('_artifactsLocationSasToken'))]",
           "contentVersion": "1.0.0.0"
         },
-        "copy": {
-          "name": "vmappcount",
-          "count": "[parameters('vmAppCount')]"
-        },
         "parameters": {
           "SharedVmConfig": { 
             "value": "[variables('SharedVmConfig')]" 
           },
           "vmName": {
-            "value": "[concat(variables('VMs').appVmName, copyIndex())]"
+            "value": "[variables('VMs').appVmName]"
           },
           "nicName": {
-            "value": "[concat(parameters('configName'),'-APP_NIC', copyIndex())]"
+            "value": "[concat(parameters('configName'),'-APP_NIC')]"
           },
           "modulesURL": {
             "value": "[variables('assetLocation')]"
           },
           "configurationFunction": {
             "value": "[variables('VMs').appConfigurationFunction]"
+          }
+        }
+      }
+    },
+{
+      "name": "App2Server",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "comments": "This is the deployment resource for the app server VM.",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('configName'),'-APP2_NIC')]",
+        "[concat('Microsoft.Resources/deployments/','ADDC')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templates'),'/app.json',parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "SharedVmConfig": { 
+            "value": "[variables('SharedVmConfig')]" 
+          },
+          "vmName": {
+            "value": "[variables('VMs').app2VmName]"
+          },
+          "nicName": {
+            "value": "[concat(parameters('configName'),'-APP2_NIC')]"
+          },
+          "modulesURL": {
+            "value": "[variables('assetLocation')]"
+          },
+          "configurationFunction": {
+            "value": "[variables('VMs').app2ConfigurationFunction]"
           }
         }
       }
@@ -441,6 +516,9 @@
           },
           "nicName": {
             "value": "[concat(parameters('configName'),'-CLI_NIC')]"
+          },
+          "vhdUri": {
+            "value": "[parameters('clientVhdUri')]"
           }
         }
       }
@@ -463,6 +541,14 @@
     "AppFqdn": {
       "type": "string",
       "value": "[reference(variables('VMs').appPublicIpName).dnsSettings.fqdn]"
+    },
+    "App2PublicIpAddress": {
+      "type": "string",
+      "value": "[reference(variables('VMs').app2PublicIpName).ipAddress]"
+    },
+    "App2Fqdn": {
+      "type": "string",
+      "value": "[reference(variables('VMs').app2PublicIpName).dnsSettings.fqdn]"
     }
   }
 }

@@ -3,13 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "configName": {
-      "value": "TlgBaseConfig-01"
+      "value": "AzServiceSync"
     },
     "domainName": {
       "value": "corp.contoso.com"
     },
     "serverOS": {
-      "value": "2016-Datacenter"
+      "value": "2019-Datacenter"
     },
     "adminUsername": {
       "value": ""
@@ -18,7 +18,7 @@
       "value": ""
     },
     "deployClientVM": {
-      "value": "yes"
+      "value": "Yes"
     },
     "vmSize": {
       "value": "Standard_DS2_v2"
