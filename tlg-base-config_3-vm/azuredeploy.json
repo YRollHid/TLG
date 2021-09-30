@@ -61,6 +61,13 @@
         "description": "DNS label prefix for public IPs. Must be lowercase and match the regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."
       }
     },
+    "vmAppCount": {
+     "type": "int",
+     "defaultValue": 2,
+     "metadata": {
+       "description": "The number of instance of an Azure resource tha will be deploy."
+     }
+    },
     "_artifactsLocation": {
       "type": "string",
       "metadata": {
@@ -100,15 +107,15 @@
       "adNicIP": "10.0.0.10",
       "adPublicIpName": "[concat(parameters('configName'),'-AD_IP')]",
 
-      "appVmName": "APP1",
+      "appVmName": "[concat('APP', copyIndex())]",
       "appConfigurationFunction": {
         "AppConfig": "AppConfig.ps1\\AppConfig"
       },
-      "appNicIP": "10.0.0.11",
-      "appPublicIpName": "[concat(parameters('configName'),'-APP_IP')]",
+      "appNicIP": "[concat('10.0.0.1', copyIndex())]",
+      "appPublicIpName": "[concat(parameters('configName'),'-APP_IP', copyIndex())]",
 
       "cliVmName": "CLIENT1",
-      "clientNicIP": "10.0.0.12",
+      "clientNicIP": "10.0.0.20",
       "cliPublicIpName": "[concat(parameters('configName'),'-CLI_IP')]"
     },
 
@@ -218,8 +225,12 @@
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
-          "domainNameLabel": "[toLower(concat(parameters('dnsLabelPrefix'),'app'))]"
+          "domainNameLabel": "[toLower(concat(parameters('dnsLabelPrefix'),'app', copyIndex()))]"
         }
+      },
+      "copy": {
+        "name": "vmappcopy",
+        "count": "[parameters('vmAppCount')]"
       }
     },
     {
@@ -264,7 +275,7 @@
       }
     },
     {
-      "name": "[concat(parameters('configName'),'-APP_NIC')]",
+      "name": "[concat(parameters('configName'),'-APP_NIC', copyIndex())]",
       "type": "Microsoft.Network/networkInterfaces",
       "location": "[resourceGroup().location]",
       "dependsOn": [
@@ -294,6 +305,10 @@
           ],
           "internalDomainNameSuffix": "[parameters('domainName')]"
         }
+      },
+      "copy": {
+        "name": "vmappcount",
+        "count": "[parameters('vmAppCount')]"
       }
     },
     {
@@ -369,7 +384,7 @@
       "apiVersion": "2015-01-01",
       "comments": "This is the deployment resource for the app server VM.",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/',parameters('configName'),'-APP_NIC')]",
+        "[concat('Microsoft.Network/networkInterfaces/',parameters('configName'),'-APP_NIC', copyIndex())]",
         "[concat('Microsoft.Resources/deployments/','ADDC')]"
       ],
       "properties": {
@@ -377,6 +392,10 @@
         "templateLink": {
           "uri": "[concat(variables('templates'),'/app.json',parameters('_artifactsLocationSasToken'))]",
           "contentVersion": "1.0.0.0"
+        },
+        "copy": {
+          "name": "vmappcount",
+          "count": "[parameters('vmAppCount')]"
         },
         "parameters": {
           "SharedVmConfig": { 
@@ -386,7 +405,7 @@
             "value": "[variables('VMs').appVmName]"
           },
           "nicName": {
-            "value": "[concat(parameters('configName'),'-APP_NIC')]"
+            "value": "[concat(parameters('configName'),'-APP_NIC', copyIndex())]"
           },
           "modulesURL": {
             "value": "[variables('assetLocation')]"
