@@ -19,12 +19,12 @@
     "serverOS": {
       "type": "string",
       "allowedValues": [
-        "2012-R2-Datacenter", "2016-Datacenter"
+        "2012-R2-Datacenter", "2016-Datacenter", "2019-Datacenter"
       ],
       "metadata": {
         "description": "The OS of application servers in your deployment."
       },
-      "defaultValue": "2016-Datacenter"
+      "defaultValue": "2019-Datacenter"
     },
     "adminUsername": {
       "type": "string",
